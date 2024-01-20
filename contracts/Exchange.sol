@@ -60,4 +60,39 @@ contract Exchange is ERC20 {
     function getReserve() public view returns (uint256) {
         return ERC20(tokenAddress).balanceOf(address(this));
     }
+
+    function getOutputAmountFromSwap(uint256 inputAmount, uint256 inputReserve, uint256 outputReserve)
+        public
+        pure
+        returns (uint256)
+    {
+        require(inputReserve > 0 && outputReserve > 0, "Reserve must be freater than 0");
+
+        uint256 imputAmountWithFee = inputAmount * 99;
+
+        uint256 numerator = inputAmountWithFee * outputReserve;
+        uint256 denomirator = (inputReserve * 100) + inputAmountWithFee;
+
+        return numerator / denomirator;
+    }
+
+    function ethToTokenSwap(uint256 minTokensToReceive) public payable {
+        uint256 tokenReserveBalance = getReserve();
+        uint256 tokensToReceive =
+            getOutputAmountFromSwap(msg.value, address(this).balance - msg.value, tokenReserveBalance);
+
+        require(tokensToReceive >= minTokensToReceive, "Tokens received are less than minimum tokens expected");
+
+        ERC20(tokenAddress).transfer(msg.sender, tokensToReceive);
+    }
+
+    function tokenToEthSwap(uint256 tokenToSwap, uint256 minEthToReceive) public {
+        uint256 tokenReserveBalance = getReserve();
+        uint256 ethToReceive = getOutputAmountFromSwap(tokenToSwap, tokenReserveBalance, address(this).balance);
+
+        require(ethToReceive >= minEthToReceive, "ETH received is less than minimum ETH expected");
+
+        ERC20(tokenAddress).transferFrom(msg.sender, address(this), tokenToSwap);
+        payable(msg.sender).transfer(ethToReceive);
+    }
 }
