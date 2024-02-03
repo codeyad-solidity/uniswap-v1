@@ -11,3 +11,8 @@ npx hardhat
 ```shell
 npm install @openzeppelin/contracts dotenv
 ```
+
+# Deploy contracts
+```shell
+npx hardhat run scripts/deploy.js --network sepolia
+```
